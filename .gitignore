@@ -1,0 +1,18 @@
+# Environnement virtuel
+venv/
+
+# Fichiers Python compilés
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Configuration de l'IDE
+.vscode/
+.idea/
+
+# Log files
+*.log
+
+# Configuration de l'OS
+.DS_Store
+Thumbs.db
