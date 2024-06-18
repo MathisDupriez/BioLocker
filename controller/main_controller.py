@@ -1,19 +1,14 @@
-import threading
-import time
 from kivy.clock import Clock
-from kivy.uix.filechooser import FileChooserListView
-from kivy.uix.popup import Popup
-from controller.crypt_controller import FolderEncryptor
-import hashlib
-import base64
+from controller.utils.fingerprint_action import FingerprintActions
+from controller.utils.file_opérations import FileOperations
+from controller.utils.view_opérations import ViewOperations
+from controller.utils.password_opérations import PasswordOperations
+from model.password_model import PasswordReader
+import socket
 
 class FingerprintController:
     """
     Controller class for fingerprint authentication.
-
-    Args:
-        model: The model object.
-        view: The view object.
     """
 
     def __init__(self, model, view):
@@ -23,177 +18,147 @@ class FingerprintController:
         self.code_entered = ""
         self.Finger_print = None
         self.checking_Code = False
+        self.view_ops = ViewOperations(view)
+        self.actions = FingerprintActions(model, self.view_ops, self)
+        self.file_ops = FileOperations(self.view_ops, self)
+        self.password_reader = PasswordReader('/home/mathis/project/micro-system2024b2q2-main/model/userDb.json')
+        self.current_username = None
+        self.current_password = None
 
+    
+    # Méthode pour déverrouiller le système
     def unlock(self, instance):
         """
         Unlock the system using fingerprint authentication.
-
-        Args:
-            instance: The instance triggering the unlock action.
         """
-        self.check_fingerprint(instance)
+        self.actions.check_fingerprint(instance)
         Clock.schedule_interval(self.wait_for_fingerprint, 0.1)
 
     def wait_for_fingerprint(self, dt):
         """
         Wait for fingerprint authentication to complete.
-
-        Args:
-            dt: The time interval between checks.
-
-        Returns:
-            bool: True if fingerprint authentication is still in progress, False otherwise.
         """
-        if self.fingerprint_done:
+        if self.fingerprint_done and self.checking_Code:
             self.check_code()
             self.fingerprint_done = False
             return False
         return True
 
-    def check_fingerprint(self, instance):
-        """
-        Check the fingerprint for authentication.
-
-        Args:
-            instance: The instance triggering the fingerprint check.
-        """
-        thread = threading.Thread(target=self.run_fingerprint_check, args=(instance,))
-        thread.daemon = True
-        thread.start()
-
-    def run_fingerprint_check(self, instance):
-        """
-        Run the fingerprint authentication process.
-
-        Args:
-            instance: The instance triggering the fingerprint check.
-        """
-        self.view.add_log("Procédure de dévérouillage lancée.")
-        self.view.add_log("Veuillez poser votre doigt et le laisser jusqu'à l'extinction de la lumière du capteur.")
-        self.model.turn_on_led()
-
-        start_time = time.time()
-        finger_detected = False
-
-        def check_finger(*args):
-            nonlocal finger_detected
-            elapsed_time = time.time() - start_time
-            time_remaining = 15 - int(elapsed_time)
-            if elapsed_time >= 15:
-                Clock.unschedule(check_finger)
-                if not finger_detected:
-                    self.view.add_log("Aucun doigt détecté sur le capteur.")
-                    self.view.add_log("Procédure de dévérouillage avortée.")
-                    self.model.turn_off_led()
-                    self.fingerprint_done = True
-                return False
-
-            if self.model.is_finger_pressed():
-                finger_detected = True
-                Clock.unschedule(check_finger)
-
-            if finger_detected:
-                self.identify_fingerprint()
-                return False
-
-            self.view.add_log(f"Posez votre doigt, temps restant : {time_remaining} secondes...")
-            return True
-
-        Clock.schedule_interval(check_finger, 0.5)
-
     def identify_fingerprint(self):
         """
         Identify the fingerprint and perform necessary actions.
-
-        This method decrypts a folder if the fingerprint matches.
-
         """
         id = self.model.identify_fingerprint()
+        self.current_username = str(id)
+        print(self.current_username)
         if id is not None and id >= 0:
-            template = self.model.get_template_by_check(id)
-            print(template)
-            self.Finger_print = template
-            self.checking_Code = True
-
-            empreinte_hex = self.Finger_print
-            empreinte_bytes = bytes.fromhex(empreinte_hex)
-            hachage = hashlib.sha256(empreinte_bytes).digest()
-            cle_fernet = base64.urlsafe_b64encode(hachage)
-            encryptor = FolderEncryptor(cle_fernet)
-            print("Encrypting file...")
-            encryptor.decrypt_folder('/home/mathis/project/testencrypt')
-            print("File encrypted")
-
-            self.view.add_log("Correspondance d'empreinte trouvée.", "success")
-            self.view.change_main_button_text("Déverrouillé.")
+            self.actions.handle_fingerprint_match(id)
         else:
-            self.view.add_log("Aucune empreinte correspondante trouvée.", "error")
-            self.view.add_log("Procédure de déverrouillage avortée.", "error")
+            self.actions.handle_fingerprint_mismatch()
         self.model.turn_off_led()
         self.fingerprint_done = True
 
+
+    # Méthode pour crypter et décrypter un dossier
+    def encrypt_folder(self):
+        self.file_ops.encrypt_folder()
+
+    def decrypt_folder(self):
+        self.file_ops.decrypt_folder()
+
+
+    # Méthode pour vérifier le code
     def check_code(self):
         """
         Check the code entered by the user.
-
-        This method prompts the user to enter a 6-digit code.
         """
-        self.code_entered = ""
-        self.view.add_log("Entrez désormais votre code à 6 chiffres.")
-
-    def numpad_button_pressed(self, instance):
-        """
-        Handle button press events from the numpad.
-
-        Args:
-            instance: The instance of the button pressed.
-        """
-        if len(self.code_entered) < 6:
-            self.code_entered += instance.text
-            self.view.add_log(instance.text)
-            if self.checking_Code:
-                if len(self.code_entered) == 6:
-                    self.verify_code()
+        self.current_password = ""
+        self.view_ops.log_enter_code_message()
 
     def verify_code(self):
         """
         Verify the entered code.
-
-        This method compares the entered code with the correct code and logs the result.
         """
-        self.view.add_log(f"Code saisi : {self.code_entered}")
-        if self.code_entered == "123456":
-            self.view.add_log("Code correct, déverrouillage réussi.", "success")
+        self.view_ops.log_code_entered(self.current_password)
+        self.hashed_password = PasswordOperations.hash_password(self.current_password)
+        self.hashed_corect_password = self.password_reader.get_password_for_user(self.current_username)
+        print(self.hashed_password)
+        print(self.hashed_corect_password)
+        print(str(self.current_username))
+        if self.hashed_password == self.hashed_corect_password:
+            self.view_ops.log_code_correct()
+            self.checking_Code = False
         else:
-            self.view.add_log("Code incorrect, veuillez réessayer.", "error")
-        self.code_entered = ""
+            self.view_ops.log_code_incorrect()
+            self.check_code()
+
+
+
+    # Méthodes pour gérer les événements des boutons
+    def numpad_button_pressed(self, instance):
+        """
+        Handle button press events from the numpad.
+        """
+        if(self.checking_Code == False):
+            return
+        else:
+            if "C" in instance.text:
+                self.current_password = ""
+            elif "ok" in instance.text:
+                self.verify_code()
+            elif instance.text in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]:
+                self.current_password += instance.text
+
 
     def menu_button_pressed(self):
         """
         Handle the press event of the menu button.
         """
-        self.view.add_log("Menu button pressed")
+        self.view_ops.log_menu_button_pressed()
 
     def settings_button_pressed(self):
         """
         Handle the press event of the settings button.
         """
-        self.view.add_log("Settings button pressed")
+        self.view_ops.log_settings_button_pressed()
 
-    def help_button_pressed(self):
+    def get_local_ip(self):
         """
-        Handle the press event of the help button.
+        Retrieve the local IP address of the device.
         """
-        self.view.add_log("Help button pressed")
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            # Connexion fictive
+            s.connect(("8.8.8.8", 80))
+            local_ip = s.getsockname()[0]
+        except Exception:
+            local_ip = "127.0.0.1"
+        finally:
+            s.close()
+        return local_ip
+
+    def ip_button_pressed(self):
+        """
+        Handle the press event of the IP button.
+        """
+        ip_address = self.get_local_ip()
+        self.view_ops.log_ip_address(ip_address)
+
+
+
+
+
+    # Méthodes pour crypter et décrypter un fichier
+    # Non utilisées dans l'application actuelle
 
     def select_file_encrypt(self):
         """
         Select a file for encryption.
         """
-        self.show_file_chooser('encrypt')
+        self.view_ops.show_file_chooser('encrypt')
 
     def select_file_decrypt(self):
         """
         Select a file for decryption.
         """
-        self.show_file_chooser('decrypt')
+        self.view_ops.show_file_chooser('decrypt')

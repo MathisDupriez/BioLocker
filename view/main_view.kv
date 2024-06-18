@@ -11,8 +11,8 @@
             text: "Settings"
             on_press: root.controller.settings_button_pressed()
         Button:
-            text: "Help"
-            on_press: root.controller.help_button_pressed()
+            text: "Addresse ip"
+            on_press: root.controller.ip_button_pressed()
 
     BoxLayout:
         orientation: 'horizontal'
@@ -94,7 +94,7 @@
                     on_press: root.controller.numpad_button_pressed(self)
                 Button:
                     text: '0'
-                    on_press: root.controller.run_fingerprint_check(self)
+                    on_press: root.controller.numpad_button_pressed(self)
                 Button:
                     text: 'C'
                     on_press: root.controller.numpad_button_pressed(self)

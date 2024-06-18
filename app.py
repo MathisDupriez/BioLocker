@@ -11,11 +11,6 @@ class MyApp(App):
         view = MainView()  # Initially no controller is set
         controller = FingerprintController(model, view)
         view.setup(controller)
-
-        smbController = SambaController()
-        smbController.start_server()
-        smbController.add_user("test", "test")
-        smbController.list_users()
         
         return view
 

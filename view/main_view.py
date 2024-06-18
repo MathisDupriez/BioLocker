@@ -8,7 +8,6 @@ from kivy.config import Config
 from kivy.clock import Clock
 
 # Configurer la fenêtre pour qu'elle se lance en plein écran
-#Config.set('graphics', 'fullscreen', 'auto')
 Config.set('graphics', 'width', '480')
 Config.set('graphics', 'height', '320')
 Config.set('graphics', 'resizable', False)  # Rendre la fenêtre non redimensionnable
@@ -35,7 +34,7 @@ class MainView(BoxLayout):
         Clock.schedule_once(lambda dt: self._add_log(log_message, log_type))
 
     def _add_log(self, log_message, log_type):
-        color = {'info': '#ffffff', 'error': '#ff0000', 'success': '#00ff00'}[log_type]
+        color = {'info': [1, 1, 1, 1], 'error': [1, 0, 0, 1], 'success': [0, 1, 0, 1]}[log_type]
         log_message = str(log_message)
         # Créez le label et ajoutez-le au conteneur de logs
         log_label = Label(
@@ -51,6 +50,8 @@ class MainView(BoxLayout):
             texture_size=lambda instance, value: setattr(instance, 'height', value[1])
         )
         self.ids.log_box.add_widget(log_label)
-        self.ids.log_scroll.scroll_y = 0  # Scroll to the bottom
-    def change_main_button_text(self,text):
+        # Scroll to the bottom after adding the new log
+        Clock.schedule_once(lambda dt: setattr(self.ids.log_scroll, 'scroll_y', 0))
+
+    def change_main_button_text(self, text):
         self.ids.main_button.text = text
