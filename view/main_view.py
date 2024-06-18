@@ -8,6 +8,7 @@ from kivy.config import Config
 from kivy.clock import Clock
 
 # Configurer la fenêtre pour qu'elle se lance en plein écran
+Config.set('graphics', 'fullscreen', '0')
 Config.set('graphics', 'width', '480')
 Config.set('graphics', 'height', '320')
 Config.set('graphics', 'resizable', False)  # Rendre la fenêtre non redimensionnable

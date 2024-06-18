@@ -1,4 +1,5 @@
 from kivy.clock import Clock
+from controller.samba_controller import SambaManager
 from controller.utils.fingerprint_action import FingerprintActions
 from controller.utils.file_opérations import FileOperations
 from controller.utils.view_opérations import ViewOperations
@@ -6,24 +7,27 @@ from controller.utils.password_opérations import PasswordOperations
 from model.password_model import PasswordReader
 import socket
 
+
 class FingerprintController:
     """
     Controller class for fingerprint authentication.
     """
 
-    def __init__(self, model, view):
+    def __init__(self, model, view, samba_manager):
         self.model = model
         self.view = view
         self.fingerprint_done = False
         self.code_entered = ""
         self.Finger_print = None
         self.checking_Code = False
+        self.current_username = None
+        self.current_password = None
+
+        self.samba_manager = samba_manager
         self.view_ops = ViewOperations(view)
         self.actions = FingerprintActions(model, self.view_ops, self)
         self.file_ops = FileOperations(self.view_ops, self)
         self.password_reader = PasswordReader('/home/mathis/project/micro-system2024b2q2-main/model/userDb.json')
-        self.current_username = None
-        self.current_password = None
 
     
     # Méthode pour déverrouiller le système
@@ -79,15 +83,20 @@ class FingerprintController:
         """
         Verify the entered code.
         """
-        self.view_ops.log_code_entered(self.current_password)
         self.hashed_password = PasswordOperations.hash_password(self.current_password)
         self.hashed_corect_password = self.password_reader.get_password_for_user(self.current_username)
-        print(self.hashed_password)
-        print(self.hashed_corect_password)
-        print(str(self.current_username))
         if self.hashed_password == self.hashed_corect_password:
             self.view_ops.log_code_correct()
             self.checking_Code = False
+            self.Finger_print += self.current_password
+            #decrypter le dossier ici avant d'ouvrir
+            # Utilisation correcte de create_random_user_and_share pour obtenir un nom d'utilisateur et un mot de passe
+            share_name = 12
+            username, password = self.samba_manager.create_random_user_and_share(share_name)
+            self.samba_manager.start_samba()
+            self.view_ops.log_samba_start()
+            self.view_ops.log_samba_share_created(share_name, username, password)
+
         else:
             self.view_ops.log_code_incorrect()
             self.check_code()
