@@ -5,11 +5,11 @@
         size_hint_y: None
         height: '40dp'
         Button:
-            text: "Menu"
-            on_press: root.controller.menu_button_pressed()
+            text: "Ouvrir le partage"
+            on_press: root.controller.start_samba()
         Button:
-            text: "Settings"
-            on_press: root.controller.settings_button_pressed()
+            text: "Fermer le partage"
+            on_press: root.controller.stop_samba()
         Button:
             text: "Addresse ip"
             on_press: root.controller.ip_button_pressed()
@@ -43,8 +43,15 @@
                 Button:
                     height: '80dp'
                     id: main_button
-                    text: "lancer la procédure de dévérouillage."
+                    text: "Décrypté."
                     on_press: root.controller.unlock(self)
+                Button:
+                    height: '80dp'
+                    id: main_button
+                    text: "Encrypté."
+                    on_press: root.controller.lock(self)
+         
+                
                 
 
         BoxLayout:
@@ -99,13 +106,4 @@
                     text: 'C'
                     on_press: root.controller.numpad_button_pressed(self)
 
-            BoxLayout:
-                orientation: 'horizontal'
-                height: '80dp'
-
-                Button:
-                    text: 'Oui'
-                    on_press: root.controller.numpad_button_pressed(self)
-                Button:
-                    text: 'Non'
-                    on_press: root.controller.numpad_button_pressed(self)
+            

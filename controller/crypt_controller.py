@@ -3,13 +3,13 @@ from cryptography.fernet import Fernet
 
 class FolderEncryptor:
     """
-    A class that provides methods to encrypt and decrypt files and folders.
+    Une classe qui fournit des méthodes pour crypter et décrypter des fichiers et des dossiers.
 
     Args:
-        key (bytes): The encryption key used for encryption and decryption.
+        key (bytes): L'empreinte utilisée pour le cryptage et le décryptage.
 
-    Attributes:
-        key (bytes): The encryption key used for encryption and decryption.
+    Attributs:
+        key (bytes): L'empreinte utilisée pour le cryptage et le décryptage.
     """
 
     def __init__(self, key):
@@ -17,10 +17,10 @@ class FolderEncryptor:
 
     def encrypt_file(self, file_path):
         """
-        Encrypts a file using the provided encryption key.
+        Crypte un fichier en utilisant la clé de cryptage fournie.
 
         Args:
-            file_path (str): The path to the file to be encrypted.
+            file_path (str): Le chemin vers le fichier à crypter.
         """
         with open(file_path, 'rb') as file:
             data = file.read()
@@ -30,10 +30,10 @@ class FolderEncryptor:
 
     def decrypt_file(self, file_path):
         """
-        Decrypts a file using the provided encryption key.
+        Décrypte un fichier en utilisant la clé de cryptage fournie.
 
         Args:
-            file_path (str): The path to the file to be decrypted.
+            file_path (str): Le chemin vers le fichier à décrypter.
         """
         with open(file_path, 'rb') as file:
             data = file.read()
@@ -43,10 +43,10 @@ class FolderEncryptor:
 
     def encrypt_folder(self, folder_path):
         """
-        Encrypts all files in a folder and its subfolders using the provided encryption key.
+        Crypte tous les fichiers dans un dossier et ses sous-dossiers en utilisant la clé de cryptage fournie.
 
         Args:
-            folder_path (str): The path to the folder to be encrypted.
+            folder_path (str): Le chemin vers le dossier à crypter.
         """
         for root, dirs, files in os.walk(folder_path):
             for file in files:
@@ -55,10 +55,10 @@ class FolderEncryptor:
 
     def decrypt_folder(self, folder_path):
         """
-        Decrypts all files in a folder and its subfolders using the provided encryption key.
+        Décrypte tous les fichiers dans un dossier et ses sous-dossiers en utilisant la clé de cryptage fournie.
 
         Args:
-            folder_path (str): The path to the folder to be decrypted.
+            folder_path (str): Le chemin vers le dossier à décrypter.
         """
         for root, dirs, files in os.walk(folder_path):
             for file in files:
@@ -67,26 +67,26 @@ class FolderEncryptor:
 
     def _encrypt_data(self, data):
         """
-        Encrypts the provided data using the encryption key.
+        Crypte les données fournies en utilisant la clé de cryptage.
 
         Args:
-            data (bytes): The data to be encrypted.
+            data (bytes): Les données à crypter.
 
         Returns:
-            bytes: The encrypted data.
+            bytes: Les données cryptées.
         """
         cipher = Fernet(self.key)
         return cipher.encrypt(data)
 
     def _decrypt_data(self, data):
         """
-        Decrypts the provided data using the encryption key.
+        Décrypte les données fournies en utilisant la clé de cryptage.
 
         Args:
-            data (bytes): The data to be decrypted.
+            data (bytes): Les données à décrypter.
 
         Returns:
-            bytes: The decrypted data.
+            bytes: Les données décryptées.
         """
         cipher = Fernet(self.key)
         return cipher.decrypt(data)

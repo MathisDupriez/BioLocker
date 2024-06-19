@@ -1,7 +1,0 @@
-TODO :
-- faire en sorte que l'application supprimer le user, ferme le partage
-a l'arret de l'appplication
-- Faire en sorte de recrypter avec les même clef a l'arret de l'app
-
-- faire en sorte que le cryptage et décryptage soit log_folder_action
-- Laisser une variable courante dans le code pour toujours vérifier l'état du cryptage
